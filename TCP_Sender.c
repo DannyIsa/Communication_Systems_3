@@ -41,8 +41,48 @@ int main(int argc, char *argv[])
     sender.sin_family = AF_INET;
     //Sets the port
     sender.sin_port = htons(port);
-    
+
+    // try to establish connection with the server
+    if(connect(sock , (struct sockaddr *)&sender, sizeof(sender))<0)
+    {
+        perror("connect(2)");
+        close(sock);
+        return 1;
+    }
+    //connection established (if we didnt get an error)
+    //the package info and length
+    int pakLeng;
+    char* pakInfo;
+    int re = 1;
+
+    while(re){
+        pakInfo = util_generate_random_data(100);// UNFINISHED NEEDS THE TRUE SIZE
+        pakLeng = 100;
+        char *temporary = "100";
+        int bytes_sent = sendSock(strlen(temporary)+1 , temporary , sock);
+        if(bytes_sent <= 0){
+            perror("Failed to send socket , 0 bytes transferred");
+            //User input if we want to retry sending the socket.
+            scanf("%d" , re);
+        }
+        
+
+    }
+    //if socket was transferred ; terminate
+    close(sock);
     return 0;
+}
+
+int sendSock(int length , char* info , int socket){
+    // Try to send message 
+    int bytes = send(socket , info , length , 0);
+
+    //if no bytes were sent - return
+    if(bytes <= 0){
+        perror("send(2)");
+        return -1;
+    }
+    return bytes;
 }
 
 int get_params(int argc, char *argv[], int *port, char *ip, char *algo)
