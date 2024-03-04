@@ -14,7 +14,7 @@ int main(int argc, char *argv[])
 
     if (get_params(argc, argv, &port, ip, algo) == -1)
     {
-        printf("Invalid flags");
+        perror("Invalid flags");
         return 2;
     }
 
@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
 
     if (sock == -1)
     {
-        printf("Error: socket creation failed");
+        perror("Error: socket creation failed");
         return 3;
     }
 
@@ -37,7 +37,11 @@ int main(int argc, char *argv[])
         close(sock);
         return 1;
     }
-
+    // sets the adresses to IPv4
+    sender.sin_family = AF_INET;
+    //Sets the port
+    sender.sin_port = htons(port);
+    
     return 0;
 }
 
