@@ -1,10 +1,4 @@
 #include "TCP_Sender.h"
-// defult IP address
-#define SERVER_IP "127.0.0.1"
-// default port set
-#define SERVER_PORT 5060
-// buffer to store received message
-#define BUFFER_SIZE 2048
 
 int main(int argc, char *argv[])
 {
@@ -24,9 +18,25 @@ int main(int argc, char *argv[])
         return 2;
     }
 
-    printf("port = %d\n", port);
-    printf("ip = %s\n", ip);
-    printf("algo = %s\n", algo);
+    struct sockaddr_in sender;
+
+    memset(&sender, 0, sizeof(sender));
+
+    int sock = -1;
+    sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+
+    if (sock == -1)
+    {
+        printf("Error: socket creation failed");
+        return 3;
+    }
+
+    if (inet_pton(AF_INET, ip, &sender.sin_addr) <= 0)
+    {
+        perror("inet_pton(3)");
+        close(sock);
+        return 1;
+    }
 
     return 0;
 }
