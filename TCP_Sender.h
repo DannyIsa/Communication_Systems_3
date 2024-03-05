@@ -5,10 +5,11 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 
+#define MAX_LEN 100
 #define RENO_TCP "reno"
 #define CUBIC_TCP "cubic"
 #define BUFFER 1024
-#define FILE_SIZE 2000000
+#define FILE_SIZE 524288 // size of file divided by size of int
 #define TRUE 1
 #define FALSE 0
 

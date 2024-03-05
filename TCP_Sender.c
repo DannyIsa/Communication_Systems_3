@@ -4,18 +4,18 @@ int main(int argc, char *argv[])
 {
     if (argc < 7)
     {
-        printf("Usage: %s Must send 3 valid flags\n", argv[0]);
+        printf("Usage: Must send 3 valid flags\n");
         return 1;
     }
 
     int port;
-    char ip[100];
-    char algo[100];
+    char ip[MAX_LEN];
+    char algo[MAX_LEN];
 
     if (get_params(argc, argv, &port, ip, algo) == -1)
     {
-        perror("Invalid flags");
-        return 2;
+        perror("Invalid flags\n");
+        exit(1);
     }
 
     struct sockaddr_in address;
@@ -29,6 +29,7 @@ int main(int argc, char *argv[])
         perror("Socket failed\n");
         exit(1);
     }
+
     printf("Socket created successfully\n");
 
     // Set address to IPv4 and Sets the port number
@@ -49,60 +50,91 @@ int main(int argc, char *argv[])
         perror("failed to connect server\n");
         exit(1);
     }
-    printf("Connected to %s:%d\n", ip, port);
-    // sets the data to send
-    char *data = util_generate_random_data(FILE_SIZE);
+    printf("Connected successfully\n");
+
+    char resend = TRUE;
 
     // Sends the info to the server with an option to repeat the sending if failed
-    while (TRUE)
+    while (resend)
     {
+        // sets the data to send
+        char *data = util_generate_random_data(FILE_SIZE);
+
+        // send the data size
         int data_size = sizeof(data);
 
-        if (send(client_socket, data_size, strlen(data_size) + 1, 0) <= 0)
+        if (send(client_socket, &data_size, sizeof(int), 0) <= 0)
         {
-            print("Unable to send fileith size: %d to client", FILE_SIZE);
+            perror("Unable to send size to client\n");
             close(client_socket);
             exit(1);
         }
-        // TO ADD - MESSAGE LENTGH
-        send(client_socket, data, data_size, 0);
-        printf("Message sent: %s", *data);
+        printf("File size sent");
+
+        static char temp = 0;
+
+        if (recv(client_socket, &temp, sizeof(char), 0) <= 0)
+        {
+            perror("Server didnt receive");
+            exit(1);
+        }
+        printf("Size received at server successfully\n");
+
+        if (send(client_socket, data, data_size, 0) <= 0)
+        {
+            perror("Unable to send file to client");
+            close(client_socket);
+            exit(1);
+        }
+
+        printf("Message sent successfully\n");
 
         // response from server
-        ssize_t read_size = read(client_socket, buffer, sizeof(buffer));
+        ssize_t read_size = read(client_socket, &buffer, sizeof(buffer));
 
         // determine if we wanna send again here
         if (read_size > 0)
         {
-            printf("Server response :%s\n", buffer);
+            printf("File recieved\n");
+            ;
         }
         else if (read_size == 0)
         {
             printf("Disconnected\n");
+            exit(1);
         }
         else
         {
-            perror("Read failed");
+            printf("Read failed sending again\n");
+        }
+
+        printf("Resend the file? [y/n]: ");
+        scanf("%s", &resend);
+
+        switch (resend)
+        {
+        case 'y':
+            printf("Sends anothe file\n");
+            resend = TRUE;
+            break;
+
+        case 'n':
+            resend = FALSE;
+            break;
+
+        default:
+            printf("Resend the file? [y/n]: ");
+            scanf("%s", &resend);
+            break;
         }
     }
+
     // close socket
     close(client_socket);
 
+    printf("Socket connection is closed exiting program\n");
+
     return 0;
-}
-
-int sendSock(int length, char *info, int socket)
-{
-    // Try to send message
-    int bytes = send(socket, info, length, 0);
-
-    // if no bytes were sent - return
-    if (bytes <= 0)
-    {
-        perror("send(2)");
-        return -1;
-    }
-    return bytes;
 }
 
 int get_params(int argc, char *argv[], int *port, char *ip, char *algo)
@@ -124,7 +156,7 @@ int get_params(int argc, char *argv[], int *port, char *ip, char *algo)
         }
     }
 
-    if (*port < 0 || *port > 65535 || strcmp(ip, "") == 0 || (strcmp(algo, CUBIC_TCP) != 0 && strcmp(algo, RENO_TCP) != 0) == 0)
+    if (*port < 0 || *port > 65535 || (strcmp(algo, CUBIC_TCP) != 0 && strcmp(algo, RENO_TCP) != 0))
         return -1;
 
     return 0;
@@ -145,28 +177,6 @@ char *util_generate_random_data(unsigned int size)
     for (unsigned int i = 0; i < size; i++)
         *(buffer + i) = ((unsigned int)rand() % 256);
     return buffer;
-}
-
-int sendall(int s, char *buf, int *len)
-{
-    int total = 0;        // how many bytes we've sent
-    int bytesleft = *len; // how many we have left to send
-    int n;
-
-    while (total < *len)
-    {
-        n = send(s, buf + total, bytesleft, 0);
-        if (n == -1)
-        {
-            break;
-        }
-        total += n;
-        bytesleft -= n;
-    }
-
-    *len = total; // return number actually sent here
-
-    return n == -1 ? -1 : 0; // return -1 on failure, 0 on success
 }
 
 //  struct sockaddr_in sender;
