@@ -26,9 +26,10 @@ int main(int argc, char *argv[])
     // creating the socket with IPv4 , TCP secure connectoin and the PROTOCOL
     if ((client_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == 0)
     {
-        perror("Socket failed");
+        perror("Socket failed\n");
         exit(1);
     }
+    printf("Socket created successfully\n");
 
     // Set address to IPv4 and Sets the port number
     address.sin_family = AF_INET;
@@ -37,7 +38,7 @@ int main(int argc, char *argv[])
     // convert to binary form
     if (inet_pton(AF_INET, ip, &address.sin_addr) <= 0)
     {
-        perror("Invalid address");
+        perror("Invalid address\n");
         close(client_socket);
         exit(1);
     }
@@ -45,11 +46,11 @@ int main(int argc, char *argv[])
     // connect to the server
     if (connect(client_socket, (struct sockaddr *)&address, sizeof(address)) < 0)
     {
-        perror("failed to connect server");
+        perror("failed to connect server\n");
         exit(1);
     }
     printf("Connected to %s:%d\n", ip, port);
-
+    // sets the data to send
     char *data = util_generate_random_data(FILE_SIZE);
 
     // Sends the info to the server with an option to repeat the sending if failed
