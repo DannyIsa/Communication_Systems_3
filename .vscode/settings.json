@@ -2,6 +2,7 @@
     "files.associations": {
         "stdio.h": "c",
         "tcp_sender.h": "c",
-        "stdlib.h": "c"
+        "stdlib.h": "c",
+        "tcp_receiver.h": "c"
     }
 }

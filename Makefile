@@ -1,4 +1,4 @@
-all: TCP_Sender #TCP_Receiver
+all: TCP_Sender TCP_Receiver
 
 TCP_Receiver: TCP_Receiver.o
 	gcc -o TCP_Receiver TCP_Receiver.o
