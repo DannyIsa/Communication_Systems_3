@@ -1,5 +1,9 @@
 #include "TCP_Sender.h"
 
+int get_params(int argc, char *argv[], int *port, char *ip, char *algo);
+char *util_generate_random_data(unsigned int size);
+char *stringify(int size);
+
 int main(int argc, char *argv[])
 {
     if (argc < 7)
@@ -20,10 +24,9 @@ int main(int argc, char *argv[])
 
     struct sockaddr_in address;
     int client_socket;
-    // struct sockaddr_in server_adress, client_adress;
     char buffer[BUFFER] = {0};
 
-    // creating the socket with IPv4 , TCP secure connectoin and the PROTOCOL
+    // creating the socket with IPv4 , TCP secure connection and the PROTOCOL
     if ((client_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == 0)
     {
         perror("Socket failed\n");
@@ -52,35 +55,25 @@ int main(int argc, char *argv[])
     }
     printf("Connected successfully\n");
 
-    char resend = TRUE;
+    int resend = TRUE;
+    char ans;
 
-    // Sends the info to the server with an option to repeat the sending if failed
     while (resend)
     {
-        // sets the data to send
         char *data = util_generate_random_data(FILE_SIZE);
-
-        // send the data size
-        int data_size = sizeof(data);
-
-        if (send(client_socket, &data_size, sizeof(int), 0) <= 0)
+        char *data_size_str = stringify(FILE_SIZE);
+        printf("data_size_str = %s\n", data_size_str);
+        if (send(client_socket, data_size_str, strlen(data_size_str) + 1, 0) <= 0)
         {
             perror("Unable to send size to client\n");
             close(client_socket);
             exit(1);
         }
-        printf("File size sent");
+        printf("File size sent\n");
 
         static char temp = 0;
 
-        if (recv(client_socket, &temp, sizeof(char), 0) <= 0)
-        {
-            perror("Server didnt receive");
-            exit(1);
-        }
-        printf("Size received at server successfully\n");
-
-        if (send(client_socket, data, data_size, 0) <= 0)
+        if (send(client_socket, data, FILE_SIZE, 0) <= 0)
         {
             perror("Unable to send file to client");
             close(client_socket);
@@ -89,57 +82,42 @@ int main(int argc, char *argv[])
 
         printf("Message sent successfully\n");
 
-        // response from server
-        ssize_t read_size = read(client_socket, &buffer, sizeof(buffer));
-
-        // determine if we wanna send again here
-        if (read_size > 0)
-        {
-            printf("File recieved\n");
-            ;
-        }
-        else if (read_size == 0)
-        {
-            printf("Disconnected\n");
-            exit(1);
-        }
-        else
-        {
-            printf("Read failed sending again\n");
-        }
-
         printf("Resend the file? [y/n]: ");
-        scanf("%s", &resend);
+        scanf("%c", &ans);
 
-        switch (resend)
+        printf("ans = %c\n", ans);
+        printf("equal y ? %d\n", ans == 'y');
+        printf("equal n ? %d\n", ans == 'n');
+
+        switch (ans)
         {
         case 'y':
-            printf("Sends anothe file\n");
+            send(client_socket, &ans, sizeof(char), 0);
+            printf("Sends another file\n");
             resend = TRUE;
             break;
 
         case 'n':
+            send(client_socket, &ans, sizeof(char), 0);
             resend = FALSE;
             break;
 
         default:
             printf("Resend the file? [y/n]: ");
-            scanf("%s", &resend);
+            scanf("%c", &ans);
             break;
         }
     }
 
-    // close socket
     close(client_socket);
 
-    printf("Socket connection is closed exiting program\n");
+    printf("Socket connection is closed, exiting program\n");
 
     return 0;
 }
 
 int get_params(int argc, char *argv[], int *port, char *ip, char *algo)
 {
-
     for (int i = 0; i < argc; i++)
     {
         if (strcmp(argv[i], "-ip") == 0)
@@ -165,69 +143,36 @@ int get_params(int argc, char *argv[], int *port, char *ip, char *algo)
 char *util_generate_random_data(unsigned int size)
 {
     char *buffer = NULL;
-    // Argument check.
+
     if (size == 0)
         return NULL;
+
     buffer = (char *)calloc(size, sizeof(char));
-    // Error checking.
+
     if (buffer == NULL)
         return NULL;
-    // Randomize the seed of the random number generator.
+
     srand(time(NULL));
+
     for (unsigned int i = 0; i < size; i++)
         *(buffer + i) = ((unsigned int)rand() % 256);
+
     return buffer;
 }
 
-//  struct sockaddr_in sender;
+char *stringify(int size)
+{
+    int counter = 0;
+    int temp = size;
 
-//     memset(&sender, 0, sizeof(sender));
+    while (temp != 0)
+    {
+        temp /= 10;
+        counter++;
+    }
 
-//     int sock = -1;
-//     sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    char *return_str = (char *)malloc(counter + 1);
+    sprintf(return_str, "%d", size);
 
-//     if (sock == -1)
-//     {
-//         perror("Error: socket creation failed");
-//         return 3;
-//     }
-
-//     if (inet_pton(AF_INET, ip, &sender.sin_addr) <= 0)
-//     {
-//         perror("inet_pton(3)");
-//         close(sock);
-//         return 1;
-//     }
-//     // sets the adresses to IPv4
-//     sender.sin_family = AF_INET;
-//     // Sets the port
-//     sender.sin_port = htons(port);
-
-//     // try to establish connection with the server
-//     if (connect(sock, (struct sockaddr *)&sender, sizeof(sender)) < 0)
-//     {
-//         perror("connect(2)");
-//         close(sock);
-//         return 1;
-//     }
-//     // connection established (if we didnt get an error)
-//     // the package info and length
-//     int pakLeng;
-//     char *pakInfo;
-//     int re = 1;
-
-//     while (re)
-//     {
-//         pakInfo = util_generate_random_data(100); // UNFINISHED NEEDS THE TRUE SIZE
-//         pakLeng = 100;
-//         char *temporary = "100";
-//         int bytes_sent = sendSock(strlen(temporary) + 1, temporary, sock);
-//         if (bytes_sent <= 0)
-//         {
-//             perror("Failed to send socket , 0 bytes transferred");
-//             // User input if we want to retry sending the socket.
-//             scanf("%d", &re);
-//         }
-//     }
-//     // if socket was transferred ; terminate
-//     close(sock);
+    return return_str;
+}
