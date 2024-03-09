@@ -84,68 +84,52 @@ int main(int argc, char *argv[])
         exit(1);
     }
     printf("Connection accepted from %s:%d\n", inet_ntoa(client_address.sin_addr), ntohs(client_address.sin_port));
+    memset(buffer, 0, sizeof(buffer));
 
     int active = TRUE;
 
     while (active)
     {
+        printf("Waiting to recv\n");
         int receive_init = recv(client_socket, buffer, BUFFER, 0);
         if (receive_init <= 0)
         {
             perror("Failed to receive size");
+            active = 0;
+            break;
         }
 
         int file_size = atoi(buffer);
         printf("File size: %d\n", file_size);
 
-        int bytes_received = 0;
-        int num_of_receives = 0;
-
+        struct timeval start_time, end_time;
         gettimeofday(&start_time, NULL);
+        memset(buffer, 0, sizeof(buffer));
 
+        int bytes_received = 0;
         while (bytes_received < file_size)
         {
             int read_size = recv(client_socket, buffer, BUFFER, 0);
-            if (read_size == 0)
+            if (read_size <= 0)
             {
-                printf("Client disconnected\n");
-                exit(1);
+                if (read_size == 0) printf("Client disconnected\n");
+                else perror("Read failed");
+                active = 0;
+                break;
             }
-            else if (read_size == -1)
-            {
-                perror("Read failed");
-                exit(1);
-            }
+
             bytes_received += read_size;
-            const char *response = "Message received";
-            // send(client_socket, response, strlen(response), 0);
             memset(buffer, 0, sizeof(buffer));
-            num_of_receives++;
         }
 
         gettimeofday(&end_time, NULL);
-
         // Calculate sending time and average bandwidth
         float elapsed_time_ms = (end_time.tv_sec - start_time.tv_sec) * 1000 + (end_time.tv_usec - start_time.tv_usec) / 1000;
         double elapsed_time_s = (end_time.tv_sec - start_time.tv_sec) + (end_time.tv_usec - start_time.tv_usec) / 1000000.0;
-        double size_in_mb = (bytes_received / 1024) / 1024;
-        double average_bandwidth = size_in_mb / elapsed_time_s;
+        double average_bandwidth = ((file_size/1024)/1024) / elapsed_time_s;
 
         printf("File received in %f ms\n", elapsed_time_ms);
         printf("Average Bandwidth: %.2f MBps\n", average_bandwidth);
-
-        char senderContinue;
-
-        if (recv(client_socket, &senderContinue, sizeof(char), 0) <= 0)
-        {
-            perror("ERROR: need to send argument to quit/restart");
-            exit(1);
-        }
-
-        if (senderContinue == 'n')
-        {
-            active = FALSE;
-        }
     }
 
     close(client_socket);

@@ -1,9 +1,5 @@
 #include "TCP_Sender.h"
 
-int get_params(int argc, char *argv[], int *port, char *ip, char *algo);
-char *util_generate_random_data(unsigned int size);
-char *stringify(int size);
-
 int main(int argc, char *argv[])
 {
     if (argc < 7)
@@ -55,14 +51,15 @@ int main(int argc, char *argv[])
     }
     printf("Connected successfully\n");
 
-    int resend = TRUE;
-    char ans;
+    int resend = TRUE; // Use 1 for TRUE
+    char ans[2]; // Adjusted size for null terminator
+    char *data = util_generate_random_data(FILE_SIZE);
+    
+    char data_size_str[FILE_SIZE_LENGTH + 1] = {0};
+    sprintf(data_size_str, "%d", FILE_SIZE);
 
     while (resend)
     {
-        char *data = util_generate_random_data(FILE_SIZE);
-        char *data_size_str = stringify(FILE_SIZE);
-        printf("data_size_str = %s\n", data_size_str);
         if (send(client_socket, data_size_str, strlen(data_size_str) + 1, 0) <= 0)
         {
             perror("Unable to send size to client\n");
@@ -70,8 +67,6 @@ int main(int argc, char *argv[])
             exit(1);
         }
         printf("File size sent\n");
-
-        static char temp = 0;
 
         if (send(client_socket, data, FILE_SIZE, 0) <= 0)
         {
@@ -82,38 +77,33 @@ int main(int argc, char *argv[])
 
         printf("Message sent successfully\n");
 
+        int c;
         printf("Resend the file? [y/n]: ");
-        scanf("%c", &ans);
+        scanf(" %c", &ans[0]); // Read a single character input
 
-        printf("ans = %c\n", ans);
-        printf("equal y ? %d\n", ans == 'y');
-        printf("equal n ? %d\n", ans == 'n');
-
-        switch (ans)
-        {
-        case 'y':
-            send(client_socket, &ans, sizeof(char), 0);
-            printf("Sends another file\n");
-            resend = TRUE;
-            break;
-
-        case 'n':
-            send(client_socket, &ans, sizeof(char), 0);
-            resend = FALSE;
-            break;
-
-        default:
-            printf("Resend the file? [y/n]: ");
-            scanf("%c", &ans);
-            break;
-        }
+        // Flush the input buffer to remove any extra characters or newline.
+        while ((c = getchar()) != '\n' && c != EOF) { }
+        
+        do{
+            if (ans[0] == 'y')
+            {
+                resend = TRUE;
+            }
+            else if (ans[0] == 'n')
+            {
+                resend = FALSE;
+            }else{
+                printf("Resend the file? [y/n]: ");
+                scanf(" %c", &ans[0]); // Read a single character input
+            }
+        } while(ans[0] != 'y' && ans[0] != 'n');
     }
 
-    close(client_socket);
+        close(client_socket);
 
-    printf("Socket connection is closed, exiting program\n");
+        printf("Socket connection is closed, exiting program\n");
 
-    return 0;
+        return 0;
 }
 
 int get_params(int argc, char *argv[], int *port, char *ip, char *algo)
@@ -158,21 +148,4 @@ char *util_generate_random_data(unsigned int size)
         *(buffer + i) = ((unsigned int)rand() % 256);
 
     return buffer;
-}
-
-char *stringify(int size)
-{
-    int counter = 0;
-    int temp = size;
-
-    while (temp != 0)
-    {
-        temp /= 10;
-        counter++;
-    }
-
-    char *return_str = (char *)malloc(counter + 1);
-    sprintf(return_str, "%d", size);
-
-    return return_str;
 }

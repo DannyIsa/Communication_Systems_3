@@ -1,0 +1,9 @@
+{
+    "files.associations": {
+        "inet.h": "c",
+        "tcp_sender.h": "c",
+        "in.h": "c",
+        "tcp.h": "c",
+        "stdlib.h": "c"
+    }
+}

@@ -15,6 +15,7 @@
 #define CUBIC_TCP "cubic"
 #define BUFFER 1024
 #define FILE_SIZE 2000000 // size of file divided by size of int
+#define FILE_SIZE_LENGTH 7
 #define TRUE 1
 #define FALSE 0
 
